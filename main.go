@@ -16,6 +16,7 @@ const (
 )
 
 type (
+	/*** RMSとの通信時に使用 ***/
 	JsonTime struct {
 		time.Time
 	}
@@ -50,10 +51,15 @@ type (
 	GetOrderRequest struct {
 	}
 
+	/*** 内部メソッド ***/
 	RMSApi struct {
 		serviceSecret string
 		licenseKey    string
 		authorization string
+	}
+
+	SearchOrderCondition struct {
+		OrderProgressList []int // 100: 注文確認待ち, 200: 楽天処理中, 300: 発送待ち, 400: 変更確定待ち, 500: 発送済み, 600: 支払手続き中, 700: 支払い手続き済み, 800: キャンセル確定待ち, 900: キャンセル確定
 	}
 )
 
@@ -72,15 +78,22 @@ func (a *RMSApi) Initialize(ss, lk string) {
 }
 
 // ToDo: Required以外の検索用パラメータの指定、struct使ってやる。
-func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time) (*SearchOrderResponse, error) {
+func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time, cond *SearchOrderCondition) (*SearchOrderResponse, error) {
 	if a.authorization == "" {
 		return nil, errors.New("Uninitialized")
 	}
 	reqBody := SearchOrderReuquest{}
-	// reqBody.OrderProgressList = append(reqBody.OrderProgressList, 100)
+	// For Required
 	reqBody.DateType = dateType
 	reqBody.StartDatetime = JsonTime{startDatetime}
 	reqBody.EndDatetime = JsonTime{endDatetime}
+
+	// For Optional
+	if cond != nil {
+		if len(cond.OrderProgressList) > 0 {
+			reqBody.OrderProgressList = cond.OrderProgressList
+		}
+	}
 
 	jsonStr, _ := json.Marshal(reqBody)
 

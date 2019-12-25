@@ -8,7 +8,7 @@ import (
 
 func TestSearchOrder_初期化なし(t *testing.T) {
 	a := RMSApi{}
-	_, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1))
+	_, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1), nil)
 	if err == nil {
 		t.Error("このテストはエラーを発生させるテストですが、エラーは出ませんでした。")
 		t.FailNow()
@@ -22,7 +22,7 @@ func TestSearchOrder_初期化なし(t *testing.T) {
 func TestSearchOrder_認証失敗(t *testing.T) {
 	a := RMSApi{}
 	a.Initialize("hoge", "fuga")
-	_, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1))
+	_, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1), nil)
 	if err == nil {
 		t.Error("このテストはエラーを発生させるテストですが、エラーは出ませんでした。")
 		t.FailNow()
@@ -36,7 +36,22 @@ func TestSearchOrder_認証失敗(t *testing.T) {
 func TestSearchOrder_引数なし(t *testing.T) {
 	a := RMSApi{}
 	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
-	r, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1))
+	r, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1), nil)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+	if r.CommonMessageModelResponseList[0].MessageType != "INFO" {
+		t.Errorf("Happend error expected: INFO, acctual: %s", r.CommonMessageModelResponseList[0].MessageType)
+	}
+}
+
+func TestSearchOrder_ステータス指定の検索(t *testing.T) {
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+	cond := SearchOrderCondition{}
+	cond.OrderProgressList = append(cond.OrderProgressList, 100)
+	r, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, 1), &cond)
 	if err != nil {
 		t.Errorf("Happend undefined error: %v", err)
 		t.FailNow()
