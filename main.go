@@ -5,10 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"time"
 )
 
@@ -90,9 +88,6 @@ func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time)
 	req.Header.Set("Authorization", "ESA "+a.authorization)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	dump, _ := httputil.DumpRequestOut(req, true)
-	fmt.Printf("%v\n", string(dump))
-
 	client := new(http.Client)
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -101,7 +96,6 @@ func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time)
 	}
 
 	byteArray, _ := ioutil.ReadAll(resp.Body)
-	fmt.Printf("%v\n", string(byteArray))
 	result := SearchOrderResponse{}
 	err = json.Unmarshal(byteArray, &result)
 	if err != nil {
