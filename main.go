@@ -101,5 +101,8 @@ func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time)
 	if err != nil {
 		return nil, err
 	}
+	if len(result.CommonMessageModelResponseList) == 0 {
+		return nil, errors.New("Uninitialized")
+	}
 	return &result, nil
 }
