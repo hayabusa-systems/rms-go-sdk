@@ -618,9 +618,8 @@ type (
 		// ・代引手数料未確定
 		ReqPrice int `json:"reqPrice"`
 
-		// ReaPriceTax は請求額に対する税額です。請求金額に対する税額です。請求金額が-9999の場合、ReqPriceTaxは-9999となります。
-		// TODO Fix Typo
-		ReaPriceTax int `json:"reqPriceTax"`
+		// ReqPriceTax は請求額に対する税額です。請求金額に対する税額です。請求金額が-9999の場合、ReqPriceTaxは-9999となります。
+		ReqPriceTax int `json:"reqPriceTax"`
 
 		// TotalPrice は合計金額です。計算式は商品金額 + 送料 + ラッピング料です。送料が未確定の場合、-9999となります。
 		TotalPrice int `json:"totalPrice"`
@@ -977,8 +976,7 @@ type (
 		GetOrderDeliveryModel `json:"DeliveryModel"`
 
 		// GetOrderPointModel はポイントモデルです。
-		// TODO Fix Typo
-		GetOrderPointModel `json:"DeliveryModel"`
+		GetOrderPointModel `json:"PointModel"`
 
 		// WrappingModel1 はラッピングモデル1です。
 		WrappingModel1 GetOrderWrappingModel `json:"WrappingModel"`
@@ -1131,8 +1129,8 @@ func (a *RMSApi) Initialize(ss, lk string) {
 
 // SearchOrder は楽天ペイ受注APIで注文を検索します。注文の検索では日付を指定して検索しなければいけません。dateType は期間検索種別で、startDatetime は開始日、endDatetime は終了日です。開始日は2年以内、終了日は開始日から63日以内を指定する必要があります。
 // それ以外の任意の検索条件は cond を通して指定することができます。
-// ToDo dateTypeはenumにする。
-// ToDo: Required以外の検索用パラメータの指定、struct使ってやる。
+// TODO dateTypeはenumにする。
+// TODO Required以外の検索用パラメータの指定、struct使ってやる。
 func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time, cond *SearchOrderCondition) (*SearchOrderResponse, error) {
 	if a.authorization == "" {
 		return nil, errors.New("Uninitialized")
