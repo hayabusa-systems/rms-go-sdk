@@ -24,6 +24,18 @@ const (
 	UPDATE_ORDER_MEMO_URL = "https://api.rms.rakuten.co.jp/es/2.0/order/updateOrderMemo/"
 )
 
+// SearchOrderDateType は期間検索種別を表します。
+type SearchOrderDateType int
+
+const (
+	DATE_TYPE_ORDER_DATE                    = iota + 1 // 注文日
+	DATE_TYPE_ORDER_CONFIRM_DATE                       // 注文確認日
+	DATE_TYPE_ORDER_FIX_DATE                           // 注文確定日
+	DATE_TYPE_SHIPPING_DATE                            // 発送日
+	DATE_TYPE_SHIPPING_COMPLETE_REPORT_DATE            //発送完了報告日
+	DATE_TYPE_PAYMENT_FIX_DATE                         // 決済確定日
+)
+
 type (
 	/*** RMSとの通信時に使用 ***/
 	/*** 共通 ***/
@@ -1129,15 +1141,14 @@ func (a *RMSApi) Initialize(ss, lk string) {
 
 // SearchOrder は楽天ペイ受注APIで注文を検索します。注文の検索では日付を指定して検索しなければいけません。dateType は期間検索種別で、startDatetime は開始日、endDatetime は終了日です。開始日は2年以内、終了日は開始日から63日以内を指定する必要があります。
 // それ以外の任意の検索条件は cond を通して指定することができます。
-// TODO dateTypeはenumにする。
 // TODO Required以外の検索用パラメータの指定、struct使ってやる。
-func (a *RMSApi) SearchOrder(dateType int, startDatetime, endDatetime time.Time, cond *SearchOrderCondition) (*SearchOrderResponse, error) {
+func (a *RMSApi) SearchOrder(dateType SearchOrderDateType, startDatetime, endDatetime time.Time, cond *SearchOrderCondition) (*SearchOrderResponse, error) {
 	if a.authorization == "" {
 		return nil, errors.New("Uninitialized")
 	}
 	reqBody := SearchOrderReuquest{}
 	// For Required
-	reqBody.DateType = dateType
+	reqBody.DateType = int(dateType)
 	reqBody.StartDatetime = JsonTime{startDatetime}
 	reqBody.EndDatetime = JsonTime{endDatetime}
 
