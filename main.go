@@ -1101,7 +1101,7 @@ type (
 )
 
 func (j JsonTime) format() string {
-	return j.Time.Format("2006-01-02T03:04:05") + "+0900"
+	return j.Time.Format("2006-01-02T15:04:05") + "+0900"
 }
 
 // MarshalJSON は値をJSONに変換する際のフォーマット方法を指定します。
@@ -1111,7 +1111,7 @@ func (j JsonTime) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON はJSONの値をGoの型に変換する際の変換方法を指定します。
 func (j *JsonTime) UnmarshalJSON(d []byte) error {
-	t, err := time.Parse("\"2006-01-02T03:04:05+0900\"", string(d))
+	t, err := time.Parse("\"2006-01-02T15:04:05Z0700\"", string(d))
 	*j = JsonTime{t}
 	return err
 }
