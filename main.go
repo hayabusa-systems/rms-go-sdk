@@ -272,7 +272,7 @@ type (
 		// 118: 18回払い
 		// 120: 20回払い
 		// 124: 24回払い
-		CardInstallmentDesc *int `json:"cardInstallmentDesc"`
+		CardInstallmentDesc *string `json:"cardInstallmentDesc"`
 	}
 
 	// GetOrderDeliveryModel は楽天ペイ受注APIの注文情報の取得で得られる配送方法です。

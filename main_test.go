@@ -113,3 +113,17 @@ func TestGetOrder_注文番号指定(t *testing.T) {
 		t.Errorf("Happend error expected: INFO, acctual: %s", r.GetOrderMessageModelList[0].MessageType)
 	}
 }
+
+func TestGetOrder_クレジット分割払い(t *testing.T) {
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+	r, err := a.GetOrder([]string{os.Getenv("CARD_MULTI_PAY_ORDER_NUMBER")}, 3)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+	t.Logf("%v\n", r)
+	if r.GetOrderMessageModelList[0].MessageType != "INFO" {
+		t.Errorf("Happend error expected: INFO, acctual: %s", r.GetOrderMessageModelList[0].MessageType)
+	}
+}
