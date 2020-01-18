@@ -60,6 +60,67 @@ func TestSearchOrder_ステータス指定の検索(t *testing.T) {
 		t.Errorf("Happend error expected: INFO, acctual: %s", r.CommonMessageModelResponseList[0].MessageType)
 	}
 }
+
+func TestSearchOrder_データ数を指定して検索(t *testing.T) {
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+	cond := SearchOrderCondition{}
+	cond.RequestRecordsAmount = 10
+	cond.RequestPage = 1
+
+	r, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -30), time.Now().AddDate(0, 0, 1), &cond)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+
+	if len(r.OrderNumberList) != 10 {
+		t.Errorf("Error. epected 10, actual %d", len(r.OrderNumberList))
+	}
+}
+
+func TestSearchOrder_containsArrayの含まれるテスト(t *testing.T) {
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+	cond := SearchOrderCondition{}
+	cond.SettlementMethod = 1
+
+	r, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -30), time.Now().AddDate(0, 0, 1), &cond)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+
+	rd, err := a.GetOrder(r.OrderNumberList, 3)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+
+	for _, o := range rd.OrderModelList {
+		if o.GetOrderSettlementModel.SettlementMethod != "クレジットカード" {
+			t.Errorf("Error. epected クレジットカード, actual %s", o.GetOrderSettlementModel.SettlementMethod)
+		}
+	}
+}
+
+func TestSearchOrder_containsArrayの含まれないテスト(t *testing.T) {
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+	cond := SearchOrderCondition{}
+	cond.SettlementMethod = -1
+
+	r, err := a.SearchOrder(3, time.Now().AddDate(0, 0, -30), time.Now().AddDate(0, 0, 1), &cond)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+
+	if len(r.OrderNumberList) == 0 {
+		t.Errorf("Error. epected >0, actual %d", len(r.OrderNumberList))
+	}
+}
+
 func TestGetOrder_初期化なし(t *testing.T) {
 	a := RMSApi{}
 	_, err := a.GetOrder([]string{}, 3)

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -75,6 +76,30 @@ type (
 	/*** Request ***/
 	/*** searchOrder ***/
 
+	// SearchOrderSortModel は楽天ペイ受注APIで注文検索の検索条件のうち、ソートに関する条件です。
+	SearchOrderSortModel struct {
+		// SortColumn は並び替え項目です。以下のいずれかを指定することができます。
+		// 1: 注文日時
+		SortColumn int `json:"sortColumn"`
+
+		// SortDirection は並び替え方法です。以下のいずれかを指定することができます。
+		// 1: 昇順
+		// 2: 降順
+		SortDirection int `json:"sortDirection"`
+	}
+
+	// SearchOrderPaginationRequestModel は楽天ペイ受注APIで注文検索の検索条件のうち、ページングに関する条件です。
+	SearchOrderPaginationRequestModel struct {
+		// RequestRecordsAmount は1ページあたりの取得結果数です。最大1,000件まで取得可能です。
+		RequestRecordsAmount int `json:"requestRecordsAmount"`
+
+		// RequestPage はリクエストページ番号です。
+		RequestPage int `json:"requestPage"`
+
+		// SortModelList はソート条件です。
+		SortModelList []SearchOrderSortModel `json:"SortModelList,omitempty"`
+	}
+
 	// SearchOrderRequest は楽天ペイ受注APIで注文検索の検索条件です。
 	SearchOrderReuquest struct {
 		// OrderProgressList はステータスリストです。
@@ -88,7 +113,11 @@ type (
 		// 700: 支払い手続き済
 		// 800: キャンセル確定待ち
 		// 900: キャンセル確定
-		OrderProgressList []int `json:"orderProgressList"`
+		OrderProgressList []int `json:"orderProgressList,omitempty"`
+
+		// SubStatusIdList はサブステータスIDリストです。
+		// ユーザが作成したサブステータスを指定することができます。
+		SubStatusIDList []int `json:"subStatusIdList,omitempty"`
 
 		// DateType は期間検索種別です。
 		// この項目は必須です。
@@ -109,6 +138,43 @@ type (
 		// この項目は必須です。
 		EndDatetime JsonTime `json:"endDatetime"`
 
+		// OrderTypeList は販売種別リストです。以下のいずれかを指定することができます。
+		// 1: 通常購入
+		// 4: 定期購入
+		// 5: 頒布会
+		// 6: 予約商品
+		OrderTypeList []int `json:"orderTypeList,omitempty"`
+
+		// SettlementMethod は支払い方法名です。以下のいずれかを指定することができます。
+		// 1: クレジットカード
+		// 2: 代金引換
+		// 3: 後払い
+		// 4: ショッピングクレジット/ローン
+		// 5: オートローン
+		// 6: リース
+		// 7: 請求書払い
+		// 9: 銀行振込
+		// 12: Apple Pay
+		// 13: セブンイレブン(前払)
+		// 14: ローソン、郵便局ATM等(前払)
+		// 16: Alipay
+		// 17: PayPal
+		// 21: 後払い決済(楽天市場の共通決済)
+		SettlementMethod *int `json:"settlementMethod,omitempty"`
+
+		// DeliveryName は配送方法です。
+		DeliveryName *string `json:"deliveryName,omitempty"`
+
+		// ShippingDateBlankFlag は発送日未指定有無フラグです。以下のいずれかを指定することができます。
+		// 0: 発送日の指定の有無によらず取得
+		// 1: 発送日が未指定のものだけを取得
+		ShippingDateBlankFlag *int `json:"shippingDateBlankFlag,omitempty"`
+
+		// ShippingNumberBlankFlag はお荷物伝票番号未指定有無フラグです。以下のいずれかを指定することができます。
+		// 0: お荷物伝票番号の指定の有無によらず取得
+		// 1: お荷物伝票番号が未指定のものだけを取得
+		ShippingNumberBlankFlag *int `json:"shippingNumberBlankFlag,omitempty"`
+
 		// SearchKeywordType は検索キーワード種別です。次のいずれかを指定することができます。
 		// 0: なし
 		// 1: 商品名
@@ -117,10 +183,61 @@ type (
 		// 4: 注文者お名前
 		// 5: 注文者お名前フリガナ
 		// 6: 送付先お名前
-		SearchKeywordType int `json:"searchKeywordType"`
+		SearchKeywordType *int `json:"searchKeywordType,omitempty"`
 
 		// SearchKeyword は検索キーワードです。32文字以下の入力を受け付けます。
-		SearchKeyword string `json:"searchKeyword"`
+		SearchKeyword *string `json:"searchKeyword,omitempty"`
+
+		// MailSendType は注文メールアドレス種別です。以下のいずれかを指定することができます。
+		// 0: PC/モバイル
+		// 1: PC
+		// 2: モバイル
+		MailSendType *int `json:"mailSendType,omitempty"`
+
+		// OrdererMailAddress は注文者メールアドレスです。完全一致である必要があります。
+		OrdererMailAddress *string `json:"ordererMailAddress,omitempty"`
+
+		// PhoneNumberType は電話番号種別です。以下のいずれかを指定することができます。
+		// 0: 注文者
+		// 1: 送付先
+		PhoneNumberType *int `json:"phoneNumberType,omitempty"`
+
+		// PhoneNumber は電話番号です。完全一致である必要があります。
+		PhoneNumber *string `json:"phoneNumber,omitempty"`
+
+		// ReserveNumber は申込番号です。完全一致である必要があります。
+		ReserveNumber *string `json:"reserveNumber,omitempty"`
+
+		// PurchaseSiteType は購入サイトリストです。以下のいずれかを指定することがあります。
+		// 0: すべて
+		// 1: PCで注文
+		// 2: モバイルで注文
+		// 3: スマートフォンで注文
+		// 4: タブレットで注文
+		PurchaseSiteType *int `json:"purchaseSiteType,omitempty"`
+
+		// AsurakuFlag はあす楽希望フラグです。以下のいずれかを指定することができます。
+		// 0: あす楽希望の有無にかかわらず取得
+		// 1: あす楽希望のものだけを取得
+		AsurakuFlag *int `json:"asurakuFlag,omitempty"`
+
+		// CouponUseFlag はクーポン利用有無フラグです。以下のいずれかを指定することができます。
+		// 0: クーポン利用の有無にかかわらず取得
+		// 1: クーポン利用のものだけを取得
+		CouponUseFlag *int `json:"couponUseFlag,omitempty"`
+
+		// DrugFlag は医薬品受注フラグです。以下のいずれかを指定することができます。
+		// 0: 医薬品の有無にかかわらず取得
+		// 1: 医薬品を含む注文だけを取得
+		DrugFlag *int `json:"drugFlag,omitempty"`
+
+		// OverseasFlag は海外カゴ注文フラグです。以下のいずれかを指定することができます。
+		// 0: 海外カゴ注文の有無にかかわらず取得
+		// 1: 海外カゴ注文のみ取得
+		OverseasFlag *int `json:"overseasFlag,omitempty"`
+
+		// SearchOrderPaginationRequestModel はページングに関する情報です。
+		SearchOrderPaginationRequestModel `json:"PaginationRequestModel,omitempty"`
 	}
 
 	/*** getOrder ***/
@@ -1045,6 +1162,17 @@ type (
 
 	// SearchOrderCondition は楽天ペイ受注APIの注文検索の必須以外の検索条件です。
 	SearchOrderCondition struct {
+		// SortDirection は並び替え方法です。以下のいずれかを指定することができます。
+		// 1: 昇順
+		// 2: 降順
+		SortDirection int
+
+		// RequestRecordsAmount は1ページあたりの取得結果数です。最大1,000件まで取得可能です。
+		RequestRecordsAmount int
+
+		// RequestPage はリクエストページ番号です。
+		RequestPage int
+
 		// OrderProgressList は注文ステータスです。以下のいずれかを指定することができます。
 		// 100: 注文確認待ち
 		// 200: 楽天処理中
@@ -1056,6 +1184,96 @@ type (
 		// 800: キャンセル確定待ち
 		// 900: キャンセル確定
 		OrderProgressList []int
+
+		// SubStatusIdList はサブステータスIDリストです。
+		// ユーザが指定したサブステータスを指定することができます。
+		SubStatusIDList []int
+
+		// OrderTypeList は販売種別リストです。以下のいずれかを指定することができます。
+		// 1: 通常購入
+		// 4: 定期購入
+		// 5: 頒布会
+		// 6: 予約商品
+		OrderTypeList []int
+
+		// SettlementMethod は支払い方法名です。以下のいずれかを指定することができます。
+		// 1: クレジットカード
+		// 2: 代金引換
+		// 3: 後払い
+		// 4: ショッピングクレジット/ローン
+		// 5: オートローン
+		// 6: リース
+		// 7: 請求書払い
+		// 9: 銀行振込
+		// 12: Apple Pay
+		// 13: セブンイレブン(前払)
+		// 14: ローソン、郵便局ATM等(前払)
+		// 16: Alipay
+		// 17: PayPal
+		// 21: 後払い決済(楽天市場の共通決済)
+		SettlementMethod int
+
+		// DeliveryName は配送方法です。
+		DeliveryName string
+
+		// ShippingDateBlankFlag は発送日未指定有無フラグです。
+		ShippingDateBlankFlag bool
+
+		// ShippingNumberBlankFlag はお荷物伝票番号未指定有無フラグです。
+		ShippingNumberBlankFlag bool
+
+		// SearchKeywordType は検索キーワード種別です。次のいずれかを指定することができます。
+		// 0: なし
+		// 1: 商品名
+		// 2: 商品番号
+		// 3: ひとことメモ
+		// 4: 注文者お名前
+		// 5: 注文者お名前フリガナ
+		// 6: 送付先お名前
+		SearchKeywordType int
+
+		// SearchKeyword は検索キーワードです。32文字以下の入力を受け付けます。
+		SearchKeyword string
+
+		// MailSendType は注文メールアドレス種別です。以下のいずれかを指定することができます。
+		// 0: PC/モバイル
+		// 1: PC
+		// 2: モバイル
+		MailSendType int
+
+		// OrdererMailAddress は注文者メールアドレスです。完全一致である必要があります。
+		OrdererMailAddress string
+
+		// PhoneNumberType は電話番号種別です。以下のいずれかを指定することができます。
+		// 0: 注文者
+		// 1: 送付先
+		PhoneNumberType int
+
+		// PhoneNumber は電話番号です。完全一致である必要があります。
+		PhoneNumber string
+
+		// ReserveNumber は申込番号です。完全一致である必要があります。
+		ReserveNumber string
+
+		// PurchaseSiteType は購入サイトリストです。以下のいずれかを指定することがあります。
+		// 0: すべて
+		// 1: PCで注文
+		// 2: モバイルで注文
+		// 3: スマートフォンで注文
+		// 4: タブレットで注文
+		PurchaseSiteType int
+
+		// AsurakuFlag はあす楽希望フラグです。
+		AsurakuFlag bool
+
+		// CouponUseFlag はクーポン利用有無フラグです。
+		CouponUseFlag bool
+
+		// DrugFlag は医薬品受注フラグです。
+		DrugFlag bool
+
+		// OverseasFlag は海外カゴ注文フラグです。
+		OverseasFlag bool
 	}
 
 	// UpdateOrderMemoCondition は楽天ペイ受注APIのひとことメモの更新内容です。
@@ -1100,6 +1318,25 @@ type (
 	}
 )
 
+func containsArray(a interface{}, v interface{}) bool {
+	if reflect.TypeOf(a).Kind() != reflect.Array {
+		return false
+	}
+	if reflect.TypeOf(a).Elem().Kind() != reflect.TypeOf(v).Kind() {
+		return false
+	}
+	i := 0
+	arr := reflect.ValueOf(a)
+	val := reflect.ValueOf(v)
+	for i < arr.Len() {
+		if val == arr.Index(i) {
+			return true
+		}
+		i++
+	}
+	return false
+}
+
 func (j JsonTime) format() string {
 	return j.Time.Format("2006-01-02T15:04:05") + "+0900"
 }
@@ -1141,7 +1378,6 @@ func (a *RMSApi) Initialize(ss, lk string) {
 
 // SearchOrder は楽天ペイ受注APIで注文を検索します。注文の検索では日付を指定して検索しなければいけません。dateType は期間検索種別で、startDatetime は開始日、endDatetime は終了日です。開始日は2年以内、終了日は開始日から63日以内を指定する必要があります。
 // それ以外の任意の検索条件は cond を通して指定することができます。
-// TODO Required以外の検索用パラメータの指定、struct使ってやる。
 func (a *RMSApi) SearchOrder(dateType SearchOrderDateType, startDatetime, endDatetime time.Time, cond *SearchOrderCondition) (*SearchOrderResponse, error) {
 	if a.authorization == "" {
 		return nil, errors.New("Uninitialized")
@@ -1151,11 +1387,90 @@ func (a *RMSApi) SearchOrder(dateType SearchOrderDateType, startDatetime, endDat
 	reqBody.DateType = int(dateType)
 	reqBody.StartDatetime = JsonTime{startDatetime}
 	reqBody.EndDatetime = JsonTime{endDatetime}
+	reqBody.SearchOrderPaginationRequestModel.RequestRecordsAmount = 30
+	reqBody.SearchOrderPaginationRequestModel.RequestPage = 1
 
 	// For Optional
 	if cond != nil {
+		if cond.SortDirection == 2 {
+			sm := SearchOrderSortModel{}
+			sm.SortDirection = cond.SortDirection
+			reqBody.SearchOrderPaginationRequestModel.SortModelList = append(reqBody.SearchOrderPaginationRequestModel.SortModelList, sm)
+		}
+		if cond.RequestRecordsAmount > 0 && cond.RequestRecordsAmount <= 1000 {
+			reqBody.SearchOrderPaginationRequestModel.RequestRecordsAmount = cond.RequestRecordsAmount
+		}
+		if cond.RequestPage > 0 {
+			reqBody.SearchOrderPaginationRequestModel.RequestPage = cond.RequestPage
+		}
 		if len(cond.OrderProgressList) > 0 {
 			reqBody.OrderProgressList = cond.OrderProgressList
+		}
+		if len(cond.SubStatusIDList) > 0 {
+			reqBody.SubStatusIDList = cond.SubStatusIDList
+		}
+		if len(cond.OrderTypeList) > 0 {
+			for _, v := range cond.OrderTypeList {
+				if containsArray([]int{1, 4, 5, 6}, v) {
+					reqBody.OrderTypeList = append(reqBody.OrderTypeList, v)
+				}
+			}
+		}
+		if containsArray([]int{1, 2, 3, 4, 5, 6, 7, 9, 12, 13, 14, 16, 17, 21}, cond.SettlementMethod) {
+			reqBody.SettlementMethod = &cond.SettlementMethod
+		}
+		if cond.DeliveryName != "" {
+			reqBody.DeliveryName = &cond.DeliveryName
+		}
+		if cond.ShippingDateBlankFlag {
+			reqBody.ShippingDateBlankFlag = new(int)
+			*reqBody.ShippingDateBlankFlag = 1
+		}
+		if cond.ShippingNumberBlankFlag {
+			reqBody.ShippingNumberBlankFlag = new(int)
+			*reqBody.ShippingNumberBlankFlag = 1
+		}
+		if cond.SearchKeywordType > 0 && cond.SearchKeywordType < 7 {
+			reqBody.SearchKeywordType = &cond.SearchKeywordType
+			reqBody.SearchKeyword = &cond.SearchKeyword
+		}
+		if cond.MailSendType > 0 && cond.MailSendType < 3 {
+			reqBody.MailSendType = &(cond.MailSendType)
+		}
+		if cond.OrdererMailAddress != "" {
+			reqBody.OrdererMailAddress = &cond.OrdererMailAddress
+		}
+		if cond.PhoneNumberType > 0 && cond.PhoneNumberType < 2 {
+			reqBody.PhoneNumberType = &cond.PhoneNumberType
+		}
+		if cond.PhoneNumber != "" {
+			if reqBody.PhoneNumberType == nil {
+				reqBody.PhoneNumberType = new(int)
+				*reqBody.PhoneNumberType = 0
+			}
+			reqBody.PhoneNumber = &cond.PhoneNumber
+		}
+		if cond.ReserveNumber != "" {
+			reqBody.ReserveNumber = &cond.ReserveNumber
+		}
+		if cond.PurchaseSiteType > 0 && cond.PurchaseSiteType < 5 {
+			reqBody.PurchaseSiteType = &cond.PurchaseSiteType
+		}
+		if cond.AsurakuFlag {
+			reqBody.AsurakuFlag = new(int)
+			*reqBody.AsurakuFlag = 1
+		}
+		if cond.CouponUseFlag {
+			reqBody.CouponUseFlag = new(int)
+			*reqBody.CouponUseFlag = 1
+		}
+		if cond.DrugFlag {
+			reqBody.DrugFlag = new(int)
+			*reqBody.DrugFlag = 1
+		}
+		if cond.OverseasFlag {
+			reqBody.OverseasFlag = new(int)
+			*reqBody.OverseasFlag = 1
 		}
 	}
 
