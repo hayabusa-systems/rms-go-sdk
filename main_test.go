@@ -2,6 +2,7 @@ package rms
 
 import (
 	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -282,5 +283,105 @@ func TestUpdateOrderMemo_データ更新2(t *testing.T) {
 	}
 	if r.OrderModelList[0].MailPlugSentence != nil {
 		t.Errorf("Happend error expected: %s, acctual: %s", mps, *r.OrderModelList[0].MailPlugSentence)
+	}
+}
+
+func TestUpdateOrderShipping_データ更新1(t *testing.T) {
+	sdid, _ := strconv.Atoi(os.Getenv("SHIPPINGDETAILID"))
+	dc := "1001"
+	sn := "1000"
+	sd := JsonDate{time.Now()}
+	sdf := 0
+
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+
+	c := UpdateOrderShippingCondition{}
+	c.OrderNumber = os.Getenv("ORDER_NUMBER")
+	smCond := UpdateOrderShippingBasketidModelCondition{}
+	smCond.BasketID, _ = strconv.Atoi(os.Getenv("BASKETID"))
+	ssmCond := UpdateOrderShippingShippingModelCondition{}
+	ssmCond.ShippingDetailID = &sdid
+	ssmCond.DeliveryCompany = &dc
+	ssmCond.ShippingNumber = &sn
+	ssmCond.ShippingDate = &sd
+	ssmCond.ShippingDeleteFlag = &sdf
+	smCond.ShippingModelList = append(smCond.ShippingModelList, ssmCond)
+	c.BasketidModelList = append(c.BasketidModelList, smCond)
+
+	err := a.UpdateOrderShipping(&c)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+
+	r, err := a.GetOrder([]string{os.Getenv("ORDER_NUMBER")}, 3)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+	if r.GetOrderMessageModelList[0].MessageType != "INFO" {
+		t.Errorf("Happend error expected: INFO, acctual: %s", r.GetOrderMessageModelList[0].MessageType)
+	}
+	if dc != *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].DeliveryCompany {
+		t.Errorf("Happend error expected: %s, acctual: %s", dc, *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].DeliveryCompany)
+	}
+	sdStr1, _ := sd.MarshalJSON()
+	sdStr2, _ := r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].ShippingDate.MarshalJSON()
+	if string(sdStr1) != string(sdStr2) {
+		t.Errorf("Happend error expected: %s, acctual: %s", sdStr1, sdStr2)
+	}
+	if sn != *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].ShippingNumber {
+		t.Errorf("Happend error expected: %s, acctual: %s", sn, *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].ShippingNumber)
+	}
+}
+
+func TestUpdateOrderShipping_データ更新2(t *testing.T) {
+	sdid, _ := strconv.Atoi(os.Getenv("SHIPPINGDETAILID"))
+	dc := "1000"
+	sn := ""
+	sd := JsonDate{time.Now()}
+	sdf := 0
+
+	a := RMSApi{}
+	a.Initialize(os.Getenv("SERVICE_SECRET"), os.Getenv("LICENSE_KEY"))
+
+	c := UpdateOrderShippingCondition{}
+	c.OrderNumber = os.Getenv("ORDER_NUMBER")
+	smCond := UpdateOrderShippingBasketidModelCondition{}
+	smCond.BasketID, _ = strconv.Atoi(os.Getenv("BASKETID"))
+	ssmCond := UpdateOrderShippingShippingModelCondition{}
+	ssmCond.ShippingDetailID = &sdid
+	ssmCond.DeliveryCompany = &dc
+	ssmCond.ShippingNumber = &sn
+	ssmCond.ShippingDate = &sd
+	ssmCond.ShippingDeleteFlag = &sdf
+	smCond.ShippingModelList = append(smCond.ShippingModelList, ssmCond)
+	c.BasketidModelList = append(c.BasketidModelList, smCond)
+
+	err := a.UpdateOrderShipping(&c)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+
+	r, err := a.GetOrder([]string{os.Getenv("ORDER_NUMBER")}, 3)
+	if err != nil {
+		t.Errorf("Happend undefined error: %v", err)
+		t.FailNow()
+	}
+	if r.GetOrderMessageModelList[0].MessageType != "INFO" {
+		t.Errorf("Happend error expected: INFO, acctual: %s", r.GetOrderMessageModelList[0].MessageType)
+	}
+	if dc != *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].DeliveryCompany {
+		t.Errorf("Happend error expected: %s, acctual: %s", dc, *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].DeliveryCompany)
+	}
+	sdStr1, _ := sd.MarshalJSON()
+	sdStr2, _ := r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].ShippingDate.MarshalJSON()
+	if string(sdStr1) != string(sdStr2) {
+		t.Errorf("Happend error expected: %s, acctual: %s", sdStr1, sdStr2)
+	}
+	if r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].ShippingNumber != nil {
+		t.Errorf("Happend error expected: %s, acctual: %s", sn, *r.OrderModelList[0].PackageModelList[0].ShippingModelList[0].ShippingNumber)
 	}
 }

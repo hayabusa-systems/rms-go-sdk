@@ -23,6 +23,9 @@ const (
 
 	// RMS WEB SERVICEの楽天ペイ受注APIのひとことメモ、担当者情報等の更新用のエンドポイントです。
 	UPDATE_ORDER_MEMO_URL = "https://api.rms.rakuten.co.jp/es/2.0/order/updateOrderMemo/"
+
+	// RMS WEB SERVICEの楽天ペイ受注APIの発送情報の追加・更新用のエンドポイントです。
+	UPDATE_ORDER_SHIPPING_URL = "https://api.rms.rakuten.co.jp/es/2.0/order/updateOrderShipping/"
 )
 
 // SearchOrderDateType は期間検索種別を表します。
@@ -813,7 +816,7 @@ type (
 	// GetOrderPackageModel は楽天ペイ受注APIの注文情報の取得で得られる送料に関する情報です。
 	GetOrderPackageModel struct {
 		// BascketID は送付先IDです。
-		BascketID int `json:"bascketId"`
+		BasketID int `json:"basketId"`
 
 		// PostagePrice は送料です。未設定の場合、-9999になります。
 		PostagePrice int `json:"postagePrice"`
@@ -1152,6 +1155,25 @@ type (
 		MessageModelList []UpdateOrderMemoMessageModel `json:"MessageModelList"`
 	}
 
+	/*** updateOrderShipping ***/
+
+	// UpdateOrderShippingMessageModel は楽天ペイ受注APIの発送情報の追加・更新で得られるエラーメッセージです。
+	UpdateOrderShippingMessageModel struct {
+		// CommonMessageModelResponse はエラー情報が含まれます。
+		CommonMessageModelResponse
+
+		// DataNumber はデータ番号です。
+		DataNumber int `json:"dataNumber"`
+
+		// ShippingDetailID は発送明細IDです。新規の場合は採番された番号が、更新の場合は対象の番号が入力されます。こちらの提供時期はまだ決まっていません。
+		ShippingDetailID int `json:"shippingDetailId"`
+	}
+
+	// UpdateOrderShippingRespone は楽天ペイ受注APIの発送情報の追加・更新で得られるレスポンスです。
+	UpdateOrderShippingResponse struct {
+		MessageModelList []UpdateOrderShippingMessageModel `json:"MessageModelList"`
+	}
+
 	/*** 内部メソッド ***/
 
 	RMSApi struct {
@@ -1315,6 +1337,68 @@ type (
 
 		// MailPlugSentence はメール差し込み文(お客様へのメッセージ)です。全角半角にかかわらず1024文字以下でなければいけません。
 		MailPlugSentence *string `json:"mailPlugSentence,omitempty"`
+	}
+
+	// UpdateOrderShippingShippingModelCondition は楽天ペイ受注APIの発送情報追加・更新の発送モデルです。
+	UpdateOrderShippingShippingModelCondition struct {
+		// ShippingDetailID は発送明細IDです。
+		ShippingDetailID *int `json:"shippingDetailId,omitempty"`
+
+		// DeliveryCompany は配送会社です。以下のいずれかが入力されます。
+		// 1000: その他
+		// 1001: ヤマト運輸
+		// 1002: 佐川急便
+		// 1003: 日本郵便
+		// 1004: 西濃運輸
+		// 1005: セイノースーパーエクスプレス
+		// 1006: 福山通運
+		// 1007: 名鉄運輸
+		// 1008: トナミ運輸
+		// 1009: 第一貨物
+		// 1010: 新潟運輸
+		// 1011: 中越運送
+		// 1012: 岡山県貨物運送
+		// 1013: 久留米運送
+		// 1014: 山陽自動車運送
+		// 1015: 日本トラック
+		// 1016: エコ配
+		// 1017: EMS
+		// 1018: DHL
+		// 1019: FedEx
+		// 1020: UPS
+		// 1021: 日本通運
+		// 1022: TNT
+		// 1023: OCS
+		// 1024: USPS
+		// 1025: SFエクスプレス
+		// 1026: Aramex
+		// 1027: SGHグローバル・ジャパン
+		// 1028: Rakuten EXPRESS
+		DeliveryCompany *string `json:"deliveryCompany,omitempty"`
+
+		// ShippingNumber はお荷物伝票番号です。お荷物伝票番号は機種依存文字は使用不可で、全角・半角に関わらず120文字以下である必要があります。
+		ShippingNumber *string `json:"shippingNumber,omitempty"`
+
+		// ShippingDate は発送日です。
+		ShippingDate *JsonDate `json:"shippingDate,omitempty"`
+
+		// ShippingDeleteFlag は発送情報削除フラグです。以下のいずれかが入力されます。
+		// 0: 発送情報を削除しない
+		// 1: 発送情報を削除する
+		ShippingDeleteFlag *int `json:"shippingDeleteFlag,omitempty"`
+	}
+
+	// UpdateOrderShippingBasketidModelCondition は楽天ペイ受注APIの発送情報追加・更新の送付先モデルです。
+	UpdateOrderShippingBasketidModelCondition struct {
+		// BasketID は送付先IDです。
+		BasketID          int                                         `json:"basketId"`
+		ShippingModelList []UpdateOrderShippingShippingModelCondition `json:"ShippingModelList"`
+	}
+
+	// UpdateOrderShippingCondition は楽天ペイ受注APIの発送情報の追加・更新を行うための条件です。
+	UpdateOrderShippingCondition struct {
+		OrderNumber       string                                      `json:"orderNumber"`
+		BasketidModelList []UpdateOrderShippingBasketidModelCondition `json:"BasketidModelList"`
 	}
 )
 
@@ -1554,6 +1638,39 @@ func (a *RMSApi) UpdateOrderMemo(cond *UpdateOrderMemoCondition) error {
 
 	byteArray, _ := ioutil.ReadAll(resp.Body)
 	result := UpdateOrderMemoResponse{}
+	err = json.Unmarshal(byteArray, &result)
+	if err != nil {
+		return err
+	}
+	if len(result.MessageModelList) == 0 {
+		return errors.New("Uninitialized")
+	}
+	if result.MessageModelList[0].MessageType != "INFO" {
+		return errors.New(result.MessageModelList[0].Message)
+	}
+	return nil
+}
+
+// UpdateOrderShipping は楽天ペイ受注APIで「発送情報の追加・更新」を行うことができます。
+func (a *RMSApi) UpdateOrderShipping(cond *UpdateOrderShippingCondition) error {
+	if a.authorization == "" {
+		return errors.New("Uninitialized")
+	}
+	jsonStr, _ := json.Marshal(*cond)
+
+	req, _ := http.NewRequest("POST", UPDATE_ORDER_SHIPPING_URL, bytes.NewBuffer(jsonStr))
+	req.Header.Set("Authorization", "ESA "+a.authorization)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	client := new(http.Client)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	byteArray, _ := ioutil.ReadAll(resp.Body)
+	result := UpdateOrderShippingResponse{}
 	err = json.Unmarshal(byteArray, &result)
 	if err != nil {
 		return err
