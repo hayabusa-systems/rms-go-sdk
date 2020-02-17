@@ -1437,6 +1437,11 @@ func (j *JsonTime) UnmarshalJSON(d []byte) error {
 	return err
 }
 
+// Value は格納されているtime.Timeの値を返却します。
+func (j *JsonTime) Value() time.Time {
+	return j.Time
+}
+
 func (j JsonDate) format() string {
 	return j.Time.Format("2006-01-02")
 }
@@ -1451,6 +1456,11 @@ func (j *JsonDate) UnmarshalJSON(d []byte) error {
 	t, err := time.Parse("\"2006-01-02\"", string(d))
 	*j = JsonDate{t}
 	return err
+}
+
+// Value は格納されているtime.Timeの値を返却します。
+func (j *JsonDate) Value() time.Time {
+	return j.Time
 }
 
 // Initialize はSDKを初期化します。ssはサービスシークレット、lkはライセンスキーです。サービスシークレット、ライセンスキーは https://webservice.rms.rakuten.co.jp/merchant-portal/configurationApi のページから確認してください。
