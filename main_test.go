@@ -118,7 +118,7 @@ func TestSearchOrder_containsArrayの含まれないテスト(t *testing.T) {
 	}
 
 	if len(r.OrderNumberList) == 0 {
-		t.Errorf("Error. epected >0, actual %d", len(r.OrderNumberList))
+		t.Errorf("Error. epected 0, actual %d", len(r.OrderNumberList))
 	}
 }
 
