@@ -22,7 +22,7 @@ type (
 		// ResultMessageList はメッセージ一覧です。
 		ResultMessageList ResultMessageList `xml:"resultMessageList"`
 		// Result は取得データの本体です。
-		Result *ShopCalendarBizModel `xml:"shopCalendarBizModel,omitempty"`
+		Result *ShopCalendarBizModel `xml:"result,omitempty"`
 	}
 
 	// ResultMessageList はメッセージを格納する構造体です。不要なのですが、xmlのタグを付与するために存在しています。
@@ -76,11 +76,17 @@ type (
 	// CalendarEvent は休業日情報を格納する構造体です。
 	CalendarEvent struct {
 		// RegularSchedule は定期的な休日(曜日)が格納されます。
-		RegularSchedule []string `xml:"regularSchedule,omitempty"`
+		RegularSchedule CaleendarEventWeekday `xml:"regularSchedule,omitempty"`
 		// EventDateStrs は日付が格納されます。日付はYYYYMMDDの形式です。
-		EventDateStrs []string `xml:"eventDates,omitempty"`
-		// EventDate はtime.Time型の日付が格納されます。EventDateStrsをxmlから構造体に戻すときにデータを格納します。
-		EventDates []*time.Time
+		EventDates CaleendarEventEventDate `xml:"eventDates,omitempty"`
+	}
+
+	CaleendarEventWeekday struct {
+		Weekday []string `xml:"weekday"`
+	}
+
+	CaleendarEventEventDate struct {
+		EventDate []string `xml:"eventDate"`
 	}
 
 	// ShopHoliday は長期休暇の告知を格納する構造体です。
@@ -98,51 +104,17 @@ type (
 		// MailMessageはメール告知用メッセージです。3072バイトが最大です。
 		MailMessage string `xml:"mailMessage,omitempty"`
 		// StimestampMailYmd はメール告知用表示期間の開始日です。YYYY-MM-DDThh:mm:ss+09:00の形式です。
-		StimestampMailYmd string `xml:"stimestampYmd,omitempty"`
+		StimestampMailYmd string `xml:"stimestampMailYmd,omitempty"`
 		// StimestampMail はWeb告知用表示期間の開始日です。StimestampMailYmdをxmlから構造体に戻すときデータを格納します。
 		StimestampMail *time.Time
 		// EtimestampMailYmd はメール告知用表示期間の終了日です。YYYY-MM-DDThh:mm:ss+09:00の形式です。
-		EtimestampMailYmd string `xml:"etimestampYmd,omitempty"`
+		EtimestampMailYmd string `xml:"etimestampMailYmd,omitempty"`
 		// EtimestampMail はWeb告知用表示期間の開始日です。EtimestampMailYmdをxmlから構造体に戻すときデータを格納します。
 		EtimestampMail *time.Time
 		// MessageはWeb告知用メッセージです。3072バイトが最大です。
 		Message string `xml:"message,omitempty"`
 	}
 )
-
-func (e *CalendarEvent) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	temp := CalendarEvent{}
-	if err := d.DecodeElement(&temp, &start); err != nil {
-		return err
-	}
-	*e = temp
-	for _, v := range e.EventDateStrs {
-		tmpTime, _ := time.Parse("20060102", v)
-		e.EventDates = append(e.EventDates, &tmpTime)
-	}
-	return nil
-}
-
-func (h *ShopHoliday) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	temp := ShopHoliday{}
-	if err := d.DecodeElement(temp, &start); err != nil {
-		return err
-	}
-	*h = temp
-	if h.StimestampYmd != "" {
-		*h.Stimestamp, _ = time.Parse("2006-01-02T15:04:05+0900", h.StimestampYmd)
-	}
-	if h.EtimestampYmd != "" {
-		*h.Etimestamp, _ = time.Parse("2006-01-02T15:04:05+0900", h.EtimestampYmd)
-	}
-	if h.StimestampMailYmd != "" {
-		*h.StimestampMail, _ = time.Parse("2006-01-02T15:04:05+0900", h.StimestampMailYmd)
-	}
-	if h.EtimestampMailYmd != "" {
-		*h.EtimestampMail, _ = time.Parse("2006-01-02T15:04:05+0900", h.EtimestampMailYmd)
-	}
-	return nil
-}
 
 // GetShopCalendar はRMSから営業日カレンダー・長期休暇の告知を取得します。fromDate は開始年月日で、YYYY-MM-DDの形式で渡します。指定されない場合は、現在年月日以降の情報を取得します。period は取得する期間です。1~180まで指定することができます。それ以外の場合は90日分のデータを取得します。
 func (a *RMSApi) GetShopCalendar(fromDate string, period int) (*ShopBizApiResponse, error) {
